@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f212e">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="Dice：1–6 顆傳統骰子，押總點數、指定點數或豹子，RTP 98%（模擬遊戲幣，非真錢）">
+<title>Dice</title>
+<link rel="stylesheet" href="css/style.css?v=5">
+</head>
+<body>
+<header class="topbar">
+  <a class="back-btn" id="backBtn" hidden>‹ 大廳</a>
+  <div class="brand">DICE</div>
+  <div class="demo-tag">模擬遊戲幣 · 非真錢 · RTP 98%</div>
+  <button class="sound-btn" id="soundBtn" type="button" title="音效開關" aria-label="音效開關">🔊</button>
+  <div class="wallet" title="你的遊戲幣餘額"><i class="coin"></i><b id="balance">0.00</b></div>
+</header>
+
+<main class="layout">
+  <aside class="panel">
+    <div class="seg" id="modeSeg">
+      <button type="button" class="on" data-mode="manual">手動</button>
+      <button type="button" data-mode="auto">自動</button>
+    </div>
+
+    <div class="field">
+      <label for="betAmount">下注金額</label>
+      <div class="input-row">
+        <input id="betAmount" type="number" inputmode="decimal" min="0.1" step="0.1" value="10">
+        <button type="button" data-amt="half">½</button>
+        <button type="button" data-amt="double">2×</button>
+        <button type="button" data-amt="max">Max</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>骰子數量</label>
+      <div class="chips" id="diceCount"></div>
+    </div>
+
+    <div class="field">
+      <label>玩法</label>
+      <div class="seg tight" id="typeSeg">
+        <button type="button" data-type="sum">總點數</button>
+        <button type="button" data-type="count">指定點數</button>
+        <button type="button" data-type="triple">豹子</button>
+      </div>
+    </div>
+
+    <div class="field" id="faceField">
+      <label id="faceLabel">點數</label>
+      <div class="faces" id="facePick"></div>
+    </div>
+
+    <div class="field" id="condField">
+      <label id="condLabel">條件</label>
+      <div class="seg tight" id="condSeg">
+        <button type="button" data-cond="eq">剛好</button>
+        <button type="button" data-cond="ge">以上</button>
+        <button type="button" data-cond="le">以下</button>
+      </div>
+    </div>
+
+    <div class="field" id="targetField">
+      <label id="targetLabel">總點數</label>
+      <div class="stepper">
+        <button type="button" id="tMinus" aria-label="減少">−</button>
+        <output id="targetOut">11</output>
+        <button type="button" id="tPlus" aria-label="增加">+</button>
+      </div>
+      <div class="quick" id="quickSum">
+        <button type="button" data-quick="small">小</button>
+        <button type="button" data-quick="big">大</button>
+      </div>
+    </div>
+
+    <div id="autoFields" class="auto-fields" hidden>
+      <div class="field">
+        <label for="autoCount">局數 <small>（0 = 無限）</small></label>
+        <div class="input-row"><input id="autoCount" type="number" inputmode="numeric" min="0" step="1" value="10"></div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="onWin">贏後加碼 %</label>
+          <div class="input-row"><input id="onWin" type="number" inputmode="decimal" min="0" step="1" value="0"><span class="suffix">%</span></div>
+        </div>
+        <div class="field">
+          <label for="onLoss">輸後加碼 %</label>
+          <div class="input-row"><input id="onLoss" type="number" inputmode="decimal" min="0" step="1" value="0"><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="stopProfit">獲利停止</label>
+          <div class="input-row"><input id="stopProfit" type="number" inputmode="decimal" min="0" step="1" value="0"></div>
+        </div>
+        <div class="field">
+          <label for="stopLoss">虧損停止</label>
+          <div class="input-row"><input id="stopLoss" type="number" inputmode="decimal" min="0" step="1" value="0"></div>
+        </div>
+      </div>
+      <p class="hint">0 = 不限；加碼 0% = 回到原始金額。</p>
+    </div>
+
+    <div class="stats">
+      <div><span>勝率</span><b id="chanceOut">-</b></div>
+      <div><span>倍數</span><b id="multOut">-</b></div>
+      <div><span>贏得派彩</span><b id="payOut">-</b></div>
+      <div><span>淨贏</span><b id="profitOut">-</b></div>
+    </div>
+
+    <button class="main-btn" id="mainBtn" type="button">擲骰</button>
+    <label class="toggle"><input type="checkbox" id="fastChk"> 快速擲骰</label>
+    <p class="hint center">快捷鍵：空白鍵 擲骰，↑↓ 調整目標</p>
+  </aside>
+
+  <section class="stage">
+    <div class="recent" id="recent"></div>
+    <div class="tray" id="tray">
+      <div class="result" id="result" hidden><b id="resultVal"></b><span id="resultSub"></span></div>
+    </div>
+    <div class="bet-line" id="betLine"></div>
+    <div class="dist-wrap">
+      <div class="dist-head"><span id="distTitle">總點數分布</span><span class="legend"><i class="lw"></i>贏<i class="ll"></i>輸　點柱子可直接選</span></div>
+      <div class="dist" id="dist"></div>
+      <p class="triple-note" id="tripleNote" hidden></p>
+    </div>
+    <div class="stage-foot">
+      <span>局號 <b id="nonceOut">-</b></span>
+      <button class="link" id="fairBtn" type="button">公平性</button>
+    </div>
+  </section>
+
+  <section class="tables">
+    <div class="tabs">
+      <button type="button" class="on" data-tab="mine">我的紀錄</button>
+      <button type="button" data-tab="table">賠率表</button>
+      <button type="button" data-tab="rules">規則</button>
+    </div>
+    <div class="tab-body" id="tab-mine">
+      <div class="summary" id="summary"></div>
+      <div class="list-head"><span>局號</span><span>注項</span><span>骰子</span><span>下注</span><span>派彩</span></div>
+      <div class="list" id="myList"></div>
+    </div>
+    <div class="tab-body" id="tab-table" hidden>
+      <p class="hint" id="tableHint"></p>
+      <div class="list-head four" id="tableHead"></div>
+      <div class="list" id="oddsTable"></div>
+    </div>
+    <div class="tab-body rules" id="tab-rules" hidden>
+      <ol>
+        <li>選擇骰子數量（1–6 顆）與玩法，按「擲骰」。</li>
+        <li><b>總點數</b>：押所有骰子點數加總「剛好／以上／以下」某個數字。「大」「小」會自動選好一半機率的範圍。</li>
+        <li><b>指定點數</b>：押某個點數（例如 6）出現「剛好／至少／最多」幾顆。例：3 顆骰「至少 1 個 ⚅」。</li>
+        <li><b>豹子</b>：所有骰子點數都一樣。可押任意豹子，或指定點數的豹子（至少 2 顆骰子）。</li>
+        <li>贏了派彩 = 下注 × 倍數；輸了失去下注。倍數在下注前就會顯示。</li>
+      </ol>
+      <h4>數學（RTP 98%）</h4>
+      <p>n 顆骰子共有 6<sup>n</sup> 種等機率結果。勝率 = 會贏的結果數 ÷ 6<sup>n</sup>，倍數 = 0.98 ÷ 勝率。<br>
+      所以不論押什麼，長期期望回報都是 <b>98%</b>（莊家優勢 2%）。勝率高的注倍數就低，沒有必勝打法。</p>
+      <p>為避免倍數低於 1.01×，勝率超過 97% 的注項不接受。</p>
+      <h4>公平性</h4>
+      <p>每局開始前公開 <code>SHA256(伺服器種子)</code>，結束後公開種子。第 i 顆骰子 = floor(亂數<sub>i</sub> × 6) + 1，亂數由 <code>SHA256(伺服器種子:客戶種子:局號:游標)</code> 每 8 個 hex 轉成 0~1。可在「公平性」視窗自行驗證。</p>
+    </div>
+  </section>
+</main>
+
+<dialog class="modal" id="fairDialog">
+  <form method="dialog" class="modal-card">
+    <h3>公平性驗證</h3>
+    <div class="field">
+      <label for="clientSeed">客戶種子 <small>（下一局起生效）</small></label>
+      <div class="input-row"><input id="clientSeed" type="text" maxlength="64" autocomplete="off"><button type="button" id="seedRandom">換</button></div>
+    </div>
+    <div class="field">
+      <label>下一局伺服器種子雜湊</label>
+      <code class="hash" id="nextHash"></code>
+    </div>
+    <hr>
+    <h4>驗證任一局</h4>
+    <div class="field"><label for="vServer">伺服器種子</label><div class="input-row"><input id="vServer" type="text" autocomplete="off"></div></div>
+    <div class="field"><label for="vClient">客戶種子</label><div class="input-row"><input id="vClient" type="text" autocomplete="off"></div></div>
+    <div class="two">
+      <div class="field"><label for="vNonce">局號</label><div class="input-row"><input id="vNonce" type="number" min="1" step="1"></div></div>
+      <div class="field"><label for="vDice">骰子數</label><div class="input-row"><input id="vDice" type="number" min="1" max="6" step="1"></div></div>
+    </div>
+    <div class="verify-out" id="verifyOut"></div>
+    <div class="modal-actions"><button class="main-btn" value="close">關閉</button></div>
+  </form>
+</dialog>
+
+<script src="js/sha256.js"></script>
+<script src="js/engine.js?v=5"></script>
+<script src="js/sound.js?v=5"></script>
+<script src="js/ui.js?v=5"></script>
+</body>
+</html>
