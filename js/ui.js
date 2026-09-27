@@ -429,7 +429,7 @@
   const valueText = h => (h.type === 'sum' ? `${h.value}` : h.type === 'count' ? `${h.value}×${G(h.face)}` : h.value ? `豹${G(h.value)}` : '—');
 
   function renderRecent() {
-    el.recent.innerHTML = history.slice(0, 8).reverse().map(h => `<span class="pill${h.win ? '' : ' l'}">${valueText(h)}</span>`).join('');
+    el.recent.innerHTML = history.slice(0, 8).map(h => `<span class="pill${h.win ? '' : ' l'}">${valueText(h)}</span>`).join('');
   }
 
   function renderHistory() {
