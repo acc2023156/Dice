@@ -142,12 +142,14 @@
     die.innerHTML = `<div class="lift"><div class="cube">${faces}</div></div>`;
     el.tray.appendChild(shadow);
     el.tray.appendChild(die);
-    dice.push({ el: die, cube: die.querySelector('.cube'), shadow, x: 0, y: 0, rx: 0, ry: 0, rz: 0, v: 1 + (i % 6), shown: false });
+    dice.push({ el: die, lift: die.querySelector('.lift'), cube: die.querySelector('.cube'), shadow, x: 0, y: 0, rx: 0, ry: 0, rz: 0, v: 1 + (i % 6), shown: false });
   }
   let ds = 64;
 
   function applyDie(d, x, y, lift, rx, ry, rz) {
-    d.el.style.transform = `translate3d(${x}px, ${y}px, ${lift}px)`;
+    d.el.style.transform = `translate(${x}px, ${y}px)`;
+    // 每顆骰子以自己為中心透視（正上方俯視），靜止時不會因偏離托盤中心而露出側面
+    d.lift.style.transform = `perspective(${ds * 9}px) translateZ(${lift * 0.8}px)`;
     d.cube.style.transform = `rotateZ(${rz}deg) rotateX(${rx}deg) rotateY(${ry}deg)`;
     const k = Math.min(1, lift / 400);
     d.shadow.style.transform = `translate(${x + 3 + lift * 0.18}px, ${y + 5 + lift * 0.28}px) scale(${1 - k * 0.35})`;
@@ -354,7 +356,7 @@
     renderBalance();
   }
 
-  // ---------- 分布圖：每種結果一根柱子，綠色 = 會贏，點柱子設定目標 ----------
+  // ---------- 分布圖：每種結果一根長條，綠色 = 會贏，點長條設定目標 ----------
   function renderDist() {
     const { n, type } = sel;
     const isTriple = type === 'triple';
@@ -367,7 +369,7 @@
         `指定點數豹子 <b>1 / ${total.toLocaleString()}</b>（${pct(1 / total)}）→ <b>${fmtMult(D.RTP * total)}</b>`;
       return;
     }
-    el.distTitle.innerHTML = type === 'sum' ? `${n} 顆骰子的總點數分布` : `${n} 顆骰子中 ${G(sel.face)} 出現幾顆`;
+    el.distTitle.innerHTML = type === 'sum' ? `${n} 顆骰子總點數的機率（越高越常開出）` : `${n} 顆骰子中 ${G(sel.face)} 出現幾顆的機率`;
     const outs = D.outcomes(n, type);
     const total = D.combos(n);
     const max = Math.max(...outs.map(o => o.ways));
