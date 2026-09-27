@@ -19,7 +19,7 @@
     condField: $('#condField'), condLabel: $('#condLabel'), condSeg: $('#condSeg'),
     targetField: $('#targetField'), targetLabel: $('#targetLabel'), targetOut: $('#targetOut'), tMinus: $('#tMinus'), tPlus: $('#tPlus'), quickSum: $('#quickSum'),
     chance: $('#chanceOut'), mult: $('#multOut'), pay: $('#payOut'), profit: $('#profitOut'),
-    tray: $('#tray'), result: $('#result'), resultVal: $('#resultVal'), resultSub: $('#resultSub'),
+    tray: $('#tray'), tapHint: $('#tapHint'), result: $('#result'), resultVal: $('#resultVal'), resultSub: $('#resultSub'),
     recent: $('#recent'), betLine: $('#betLine'), dist: $('#dist'), distTitle: $('#distTitle'), tripleNote: $('#tripleNote'), nonce: $('#nonceOut'),
     modeSeg: $('#modeSeg'), autoFields: $('#autoFields'),
     autoCount: $('#autoCount'), onWin: $('#onWin'), onLoss: $('#onLoss'), stopProfit: $('#stopProfit'), stopLoss: $('#stopLoss'),
@@ -59,12 +59,13 @@
   let shownBalance = null; // 動畫進行中顯示「已扣注、未派彩」的餘額
   let lastHit = null;      // 最近一局的結果值（分布圖上標記）
   let relayoutPending = false;
+  let trayTaps = +saved.trayTaps || 0; // 直接點托盤擲骰的次數，滿 3 次就不再顯示點擊提示
 
   function save() {
     try {
       localStorage.setItem(KEY, JSON.stringify({
         balance: game.balance, clientSeed: game.clientSeed, nonce: game.nonce, nextServerSeed: game.nextServerSeed,
-        history: history.slice(0, 100), bet: el.bet.value, sel, fast: el.fast.checked
+        history: history.slice(0, 100), bet: el.bet.value, sel, fast: el.fast.checked, trayTaps
       }));
     } catch (e) { /* storage unavailable */ }
   }
@@ -161,11 +162,13 @@
     const W = el.tray.clientWidth, H = el.tray.clientHeight;
     const cols = n <= 3 ? n : n === 4 ? 2 : 3;
     const rows = Math.ceil(n / cols);
-    const top = 56; // 保留給結果看板
-    ds = Math.round(Math.max(30, Math.min(76, W / (cols * 1.9 + 0.5), (H - top - 10) / (rows * 1.75 + 0.2))));
+    // 骰子放在托盤正中央；用骰子大小確保最上排不會被結果看板（高 RESULT_H）擋住
+    const RESULT_H = 52;
+    const byHeight = rows > 1 ? (H / 2 - RESULT_H) / (0.85 * (rows - 1) + 0.5) : (H / 2 - RESULT_H) / 0.5;
+    ds = Math.round(Math.max(30, Math.min(76, W / (cols * 1.9 + 0.9), byHeight)));
     el.tray.style.setProperty('--ds', ds + 'px');
     const gx = ds * 1.85, gy = ds * 1.7;
-    const cy = top + (H - top) / 2 - 4;
+    const cy = H / 2;
     const out = [];
     for (let i = 0; i < n; i++) {
       const r = Math.floor(i / cols), c = i % cols;
@@ -350,6 +353,7 @@
     el.modeSeg.querySelectorAll('button').forEach(x => { x.disabled = lock; });
     [el.autoCount, el.onWin, el.onLoss, el.stopProfit, el.stopLoss].forEach(i => { i.disabled = autoRunning; });
     el.nonce.textContent = game.nonce + (rolling ? 0 : 1);
+    el.tapHint.classList.toggle('show', mode === 'manual' && !lock && !el.main.disabled && trayTaps < 3);
 
     renderDist();
     renderTable();
@@ -567,7 +571,11 @@
     else doRoll(el.fast.checked);
   });
   // 手動模式點托盤也能擲
-  el.tray.addEventListener('click', () => { if (mode === 'manual' && !autoRunning && !el.main.disabled) el.main.click(); });
+  el.tray.addEventListener('click', () => {
+    if (mode !== 'manual' || autoRunning || el.main.disabled) return;
+    trayTaps += 1;
+    el.main.click();
+  });
 
   el.diceCount.addEventListener('click', e => {
     const b = e.target.closest('button');

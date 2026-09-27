@@ -197,13 +197,30 @@ select { border: 2px solid var(--line); border-radius: 6px; padding: 8px; appear
 .die.hl .face { box-shadow: inset 0 0 calc(var(--ds) * .14) rgba(90, 70, 40, .35), 0 0 0 3px var(--green), 0 0 18px rgba(0, 231, 1, .8); }
 .die.dim { opacity: .45; }
 
+/* 單行結果看板：高度約 40px（layout() 以 RESULT_H 預留） */
 .result {
-  position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 5; pointer-events: none;
-  background: rgba(15, 33, 46, .92); border: 3px solid var(--line); border-radius: 12px; padding: 4px 18px 6px;
-  text-align: center; animation: drop .3s ease-out; white-space: nowrap;
+  position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 5; pointer-events: none;
+  background: rgba(15, 33, 46, .92); border: 2px solid var(--line); border-radius: 10px; padding: 3px 14px;
+  display: flex; align-items: baseline; gap: 10px; animation: drop .3s ease-out; white-space: nowrap;
 }
-.result b { display: block; font-size: 26px; color: var(--strong); font-variant-numeric: tabular-nums; line-height: 1.25; }
+.result b { font-size: 21px; color: var(--strong); font-variant-numeric: tabular-nums; line-height: 1.4; }
 .result span { font-weight: 700; font-size: 13px; }
+
+/* 點擊提示：線條手指在托盤右側輕點，閒置時淡入 */
+.tap-hint {
+  position: absolute; right: 6px; top: 50%; width: 40px; margin-top: -30px; z-index: 4; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; color: rgba(255, 255, 255, .75);
+  opacity: 0; transition: opacity .25s;
+}
+.tap-hint.show { opacity: 1; transition: opacity .6s .9s; }
+.tap-hint svg { width: 30px; height: 30px; animation: tap 1.8s ease-in-out infinite; position: relative; z-index: 1; }
+.tap-hint .ripple {
+  position: absolute; top: -5px; left: 9px; width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .7); opacity: 0; animation: ripple 1.8s ease-out infinite;
+}
+.tap-hint em { font-style: normal; font-size: 10px; letter-spacing: 1px; margin-top: 4px; white-space: nowrap; }
+@keyframes tap { 0%, 55%, 100% { transform: translateY(0); } 30% { transform: translateY(5px) scale(.94); } }
+@keyframes ripple { 0%, 28% { transform: scale(.3); opacity: 0; } 32% { opacity: .9; } 75%, 100% { transform: scale(1.6); opacity: 0; } }
 .result.win { border-color: var(--green); box-shadow: 0 0 30px rgba(0, 231, 1, .35); }
 .result.win b, .result.win span { color: var(--green); }
 .result.lose span { color: var(--red); }
@@ -285,7 +302,7 @@ select { border: 2px solid var(--line); border-radius: 6px; padding: 8px; appear
   .topbar { padding: 8px 12px; gap: 8px; }
   .brand { font-size: 17px; }
   .layout { grid-template-columns: 1fr; grid-template-areas: "stage" "panel" "tables"; padding: 8px; gap: 8px; }
-  .tray { height: 230px; margin: 0 8px; }
+  .tray { height: 240px; margin: 0 8px; }
   .recent { padding: 8px; min-height: 40px; }
   .dist { height: 84px; }
   .panel { padding: 12px; }

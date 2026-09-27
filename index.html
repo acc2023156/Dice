@@ -7,7 +7,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta name="description" content="Dice：1–6 顆傳統骰子，押總點數、指定點數或豹子，RTP 98%（模擬遊戲幣，非真錢）">
 <title>Dice</title>
-<link rel="stylesheet" href="css/style.css?v=6">
+<link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 <header class="topbar">
@@ -120,6 +120,11 @@
     <div class="recent" id="recent"></div>
     <div class="tray" id="tray">
       <div class="result" id="result" hidden><b id="resultVal"></b><span id="resultSub"></span></div>
+      <div class="tap-hint" id="tapHint" aria-hidden="true">
+        <span class="ripple"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V4.5a1.5 1.5 0 0 1 3 0V10m0-1.2a1.5 1.5 0 0 1 3 0V11m0-.8a1.5 1.5 0 0 1 3 0v4.3a6 6 0 0 1-6 6h-.6a6 6 0 0 1-4.9-2.5l-2.4-3.4a1.5 1.5 0 0 1 2.3-1.9L9 15"/></svg>
+        <em>輕點擲骰</em>
+      </div>
     </div>
     <div class="bet-line" id="betLine"></div>
     <div class="dist-wrap">
@@ -192,8 +197,8 @@
 </dialog>
 
 <script src="js/sha256.js"></script>
-<script src="js/engine.js?v=6"></script>
-<script src="js/sound.js?v=6"></script>
-<script src="js/ui.js?v=6"></script>
+<script src="js/engine.js?v=8"></script>
+<script src="js/sound.js?v=8"></script>
+<script src="js/ui.js?v=8"></script>
 </body>
 </html>
