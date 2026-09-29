@@ -70,7 +70,7 @@
     } catch (e) { /* storage unavailable */ }
   }
 
-  // ---------- 返回大廳（只接受自家網域，避免被當成跳轉跳板） ----------
+  // ---------- 返回大廳：預設連到大廳；?return= 只接受自家網域，避免被當成跳轉跳板 ----------
   (function () {
     const ret = new URLSearchParams(location.search).get('return');
     if (!ret) return;
@@ -79,8 +79,25 @@
       const okHost = u.hostname === 'acc2023156.github.io' || u.hostname === location.hostname || u.hostname === 'localhost' || u.hostname === '127.0.0.1';
       if (!/^https?:$/.test(u.protocol) || !okHost) return;
       el.back.href = u.href;
-      el.back.hidden = false;
     } catch (e) { /* invalid url */ }
+  })();
+
+  // ---------- 跑馬燈：品牌名 + 隨機吉祥話 ----------
+  // 兩份相同文字捲動一半寬度 → 無縫循環；每圈都從品牌名開始，換一批吉祥話時不會跳字
+  (function () {
+    const track = $('#marquee');
+    const brand = '六子骰';
+    const cheers = ['祝你豹子', '一擲千金', '好運連連', '大吉大利', '六六大順', '點數噴發', '財源滾滾', '手氣長紅', '旗開得勝', '連莊連中'];
+    const sep = '　✦　';
+    const build = () => {
+      const c = cheers.slice().sort(() => Math.random() - 0.5);
+      const text = [brand, c[0], c[1], brand, c[2], c[3]].join(sep) + sep;
+      track.innerHTML = '';
+      for (let i = 0; i < 2; i++) track.appendChild(document.createElement('span')).textContent = text;
+      track.style.animationDuration = text.length * 0.32 + 's';
+    };
+    track.addEventListener('animationiteration', build);
+    build();
   })();
 
   // ---------- 小提示 ----------

@@ -5,18 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f212e">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<meta name="description" content="Dice：1–6 顆傳統骰子，押總點數、指定點數或豹子，RTP 98%（模擬遊戲幣，非真錢）">
-<title>Dice</title>
-<link rel="stylesheet" href="css/style.css?v=9">
+<meta name="description" content="六子骰：1–6 顆傳統骰子，押總點數、指定點數或豹子，RTP 98%（模擬遊戲幣，非真錢）">
+<title>六子骰</title>
+<link rel="stylesheet" href="css/style.css?v=11">
 </head>
 <body>
 <header class="topbar">
-  <a class="back-btn" id="backBtn" hidden>‹ 大廳</a>
-  <div class="brand">DICE</div>
-  <div class="demo-tag">模擬遊戲幣 · 非真錢 · RTP 98%</div>
-  <button class="sound-btn" id="soundBtn" type="button" title="音效開關" aria-label="音效開關">🔊</button>
-  <div class="wallet" title="你的遊戲幣餘額"><i class="coin"></i><b id="balance">0.00</b></div>
+  <a class="back-btn" id="backBtn" href="https://acc2023156.github.io/Boss88VIP/boss88-mobile-lobby.html"><span aria-hidden="true">‹</span>返回大廳</a>
+  <h1 class="brand">六子骰</h1>
+  <div class="top-right">
+    <button class="sound-btn" id="soundBtn" type="button" title="音效開關" aria-label="音效開關">🔊</button>
+    <div class="wallet" title="你的遊戲幣餘額"><i class="coin"></i><b id="balance">0.00</b></div>
+  </div>
 </header>
+
+<!-- 26 字寬跑馬燈：會員列下方、遊戲區上方 -->
+<div class="marquee-bar" aria-hidden="true"><div class="marquee"><span class="marquee-track" id="marquee"></span></div></div>
 
 <main class="layout">
   <aside class="panel">
@@ -134,6 +138,7 @@
     </div>
     <div class="stage-foot">
       <span>局號 <b id="nonceOut">-</b></span>
+      <span class="demo-tag">模擬遊戲幣 · 非真錢 · RTP 98%</span>
       <button class="link" id="fairBtn" type="button">公平性</button>
     </div>
   </section>
@@ -197,8 +202,8 @@
 </dialog>
 
 <script src="js/sha256.js"></script>
-<script src="js/engine.js?v=9"></script>
-<script src="js/sound.js?v=9"></script>
-<script src="js/ui.js?v=9"></script>
+<script src="js/engine.js?v=11"></script>
+<script src="js/sound.js?v=11"></script>
+<script src="js/ui.js?v=11"></script>
 </body>
 </html>
