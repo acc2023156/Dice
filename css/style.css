@@ -336,13 +336,12 @@ select { border: 2px solid var(--line); border-radius: 6px; padding: 8px; appear
   .recent { padding: 8px; min-height: 40px; }
   .dist { height: 84px; }
   .panel { padding: 12px; }
-  /* 底部固定的擲骰按鈕不能蓋住內容：整頁底部預留按鈕高度 */
-  .layout { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .layout { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
   .panel .hint.center { display: none; }
-  .main-btn#mainBtn {
-    position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); width: auto; z-index: 20;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, .5);
-  }
+  /* 跟珠珠寶貝一致：擲骰按鈕放在投注區塊最上方，隨下方區塊一起捲動（不固定在畫面底部） */
+  .panel { display: flex; flex-direction: column; }
+  .main-btn#mainBtn { order: -2; margin-bottom: 4px; }
+  .panel .toggle { order: -1; margin: 6px 0 12px; }
 }
 @media (max-width: 380px) {
   .wallet { padding: 6px 10px; }
