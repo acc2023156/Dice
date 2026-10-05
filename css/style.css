@@ -194,6 +194,8 @@ select { border: 2px solid var(--line); border-radius: 6px; padding: 8px; appear
   background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, .5) 0 1px, transparent 1px 4px);
 }
 .tray.thud { animation: thud .18s ease-out; }
+.tray.shaking { animation: shaking .09s ease-in-out infinite alternate; }
+@keyframes shaking { from { transform: translateX(-2px) rotate(-.3deg); } to { transform: translateX(2px) rotate(.3deg); } }
 @keyframes thud { 40% { transform: translateY(3px); } }
 
 .die { position: absolute; left: 0; top: 0; width: var(--ds); height: var(--ds); transform-style: preserve-3d; will-change: transform; transition: opacity .3s; }
@@ -349,7 +351,7 @@ select { border: 2px solid var(--line); border-radius: 6px; padding: 8px; appear
   .list-head, .row { font-size: 11px; gap: 4px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tray.thud, .result, .pill { animation: none; }
+  .tray.thud, .tray.shaking, .result, .pill { animation: none; }
   .marquee-track { animation-duration: 60s !important; }
 }
 

@@ -526,13 +526,17 @@
     let r;
     rolling = true;
     renderControls();
-    try { r = await game.roll(amount, bet()); } catch (e) { rolling = false; renderControls(); say(e.message); return null; }
+    // 按下就開始搖骰（音效與托盤晃動），伺服器結果回來再擲出
+    Sound.shake();
+    el.tray.classList.add('shaking');
+    try { r = await game.roll(amount, bet()); }
+    catch (e) { rolling = false; renderControls(); say(e.message); return null; }
+    finally { el.tray.classList.remove('shaking'); }
     record(r);
     save();
     shownBalance = D.cents(game.balance - r.payout);
     clearMarks();
     renderControls();
-    Sound.shake();
     await throwDice(r.dice, fast || reduceMotion);
     rolling = false;
     if (relayoutPending) { relayoutPending = false; placeDice(); }
