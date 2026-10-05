@@ -10,7 +10,9 @@
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const rand = (a, b) => a + Math.random() * (b - a);
 
-  const KEY = 'dice.v1';
+  // 從大廳進入時（remote）用會員的 GDBO 錢包，紀錄與本機試玩分開存
+  const remote = D.remote;
+  const KEY = remote ? 'dice.gd.v1' : 'dice.v1';
   const START_BALANCE = 1000;
   const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -46,9 +48,11 @@
   // ---------- 存檔 ----------
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { saved = {}; }
-  const game = new D.DiceGame({ balance: saved.balance ?? START_BALANCE, clientSeed: saved.clientSeed, nonce: saved.nonce });
-  if (saved.nextServerSeed) game.nextServerSeed = saved.nextServerSeed;
   const history = Array.isArray(saved.history) ? saved.history : [];
+  const game = remote
+    ? new remote.RemoteDiceGame({ clientSeed: saved.clientSeed, nonce: history[0] ? history[0].nonce : -1 })
+    : new D.DiceGame({ balance: saved.balance ?? START_BALANCE, clientSeed: saved.clientSeed, nonce: saved.nonce });
+  if (saved.nextServerSeed && !remote) game.nextServerSeed = saved.nextServerSeed;
   const sel = Object.assign({ n: 3, type: 'sum', cond: 'ge', target: 11, face: 6 }, saved.sel || {});
   if (saved.bet) el.bet.value = saved.bet;
   el.fast.checked = !!saved.fast;
@@ -491,7 +495,7 @@
 
   // 餘額用完自動補回
   function refillIfBroke() {
-    if (game.balance < 0.1) {
+    if (!remote && game.balance < 0.1) {
       game.balance = START_BALANCE;
       say(`遊戲幣用完了，已補回 ${START_BALANCE}`, true);
     }
@@ -520,10 +524,11 @@
     if (rolling) return null;
     const amount = readBet();
     let r;
-    try { r = game.roll(amount, bet()); } catch (e) { say(e.message); return null; }
+    rolling = true;
+    renderControls();
+    try { r = await game.roll(amount, bet()); } catch (e) { rolling = false; renderControls(); say(e.message); return null; }
     record(r);
     save();
-    rolling = true;
     shownBalance = D.cents(game.balance - r.payout);
     clearMarks();
     renderControls();
@@ -695,7 +700,7 @@
   function renderVerify() {
     const s = el.vServer.value.trim(), c = el.vClient.value.trim();
     const nonce = Math.floor(+el.vNonce.value), n = Math.floor(+el.vDice.value);
-    if (!s || !c || !(nonce >= 1) || !(n >= D.MIN_DICE && n <= D.MAX_DICE)) {
+    if (!s || !c || !(nonce >= 0) || !(n >= D.MIN_DICE && n <= D.MAX_DICE)) {
       el.verifyOut.innerHTML = '<span class="r">請填入完整資料</span>';
       return;
     }
@@ -726,7 +731,7 @@
   });
   $('#seedRandom').addEventListener('click', () => {
     game.clientSeed = D.randomHex(8);
-    game.nextServerSeed = D.randomHex(32);
+    if (!remote) game.nextServerSeed = D.randomHex(32);
     el.clientSeed.value = game.clientSeed;
     el.nextHash.textContent = game.nextServerHash;
     save();
@@ -739,4 +744,11 @@
   renderHistory();
   renderControls();
   window.addEventListener('beforeunload', save);
+  if (remote) {
+    rolling = true;
+    renderControls();
+    game.connect()
+      .then(() => { rolling = false; renderControls(); })
+      .catch(e => { renderControls(); say(`無法連接遊戲伺服器：${e.message}`); });
+  }
 })();
