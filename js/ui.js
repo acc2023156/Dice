@@ -3,7 +3,8 @@
   'use strict';
   const D = window.Dice;
   const $ = s => document.querySelector(s);
-  const fmt = x => (+x).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // 金額顯示兩位小數、無條件捨去（與大廳、GDBO 一致）
+  const fmt = x => (Math.trunc(Math.round(+x * 1000) / 10) / 100 || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtMult = x => (x >= 1000 ? x.toLocaleString('en-US', { maximumFractionDigits: 2 }) : x.toFixed(2)) + '×';
   const pct = x => (x * 100 >= 99.995 ? '100' : (x * 100).toFixed(x < 0.001 ? 4 : 2)) + '%';
   const wait = ms => new Promise(r => setTimeout(r, ms));
