@@ -246,7 +246,9 @@
       };
     });
     const t0 = performance.now();
-    let last = t0, running = true;
+    let last = t0, running = true, onRisen;
+    // 全部拋到高點後才可交給 throwDice 從空中落下（分頁在背景時以計時器保底）
+    const risen = new Promise(resolve => { onRisen = resolve; setTimeout(resolve, TUMBLE_RISE_MS + 200); });
     function frame(now) {
       if (!running) return;
       const t = now - t0, dt = now - last;
@@ -258,11 +260,13 @@
         a.rx += a.vx * dt; a.ry += a.vy * dt; a.rz += a.vz * dt;
         applyDie(a.d, a.x, a.y, a.lift, a.rx, a.ry, a.rz);
       }
+      if (air.every(a => a.risen)) onRisen();
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
     Sound.shake();
     return {
+      risen,
       stop() { running = false; return air; },
       // 投注失敗：骰子回到原本的位置與點數
       cancel() { running = false; placeDice(); }
@@ -577,6 +581,8 @@
     shownBalance = D.cents(game.balance - r.payout);
     clearMarks();
     renderControls();
+    // 結果比拋起還快回來時，先拋到高點再落下，避免骰子從半空瞬間回到桌面重拋
+    await air.risen;
     await throwDice(r.dice, fast || reduceMotion, air.stop());
     rolling = false;
     if (relayoutPending) { relayoutPending = false; placeDice(); }
