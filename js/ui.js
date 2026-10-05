@@ -9,6 +9,7 @@
   const pct = x => (x * 100 >= 99.995 ? '100' : (x * 100).toFixed(x < 0.001 ? 4 : 2)) + '%';
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const rand = (a, b) => a + Math.random() * (b - a);
+  const TUMBLE_RISE_MS = 180;
 
   // 從大廳進入時（remote）用會員的 GDBO 錢包，紀錄與本機試玩分開存
   const remote = D.remote;
@@ -229,29 +230,69 @@
   }
   const easeOut = t => 1 - Math.pow(1 - t, 3);
 
-  // 拋骰：往上拋起 → 落桌彈跳 → 邊滾邊滑到新位置，最後停在指定點數
-  function throwDice(values, fast) {
+  // 新出現的骰子從托盤下緣丟進來
+  const entryPoint = d => (d.shown ? { x: d.x, y: d.y } : { x: el.tray.clientWidth / 2 - ds / 2 + rand(-60, 60), y: el.tray.clientHeight - ds * 0.6 });
+
+  // 等伺服器結果時：按下就把骰子拋起，在空中翻滾到結果回來；stop() 交出當下狀態讓 throwDice 接著落下
+  function tumble(n, fast) {
+    const H0 = fast ? 150 : 300;
+    const sign = () => (Math.random() < 0.5 ? -1 : 1);
+    const air = dice.slice(0, n).map(d => {
+      d.el.style.display = d.shadow.style.display = '';
+      const at = entryPoint(d);
+      return {
+        d, x: at.x, y: at.y, lift: 0, rx: d.rx || 0, ry: d.ry || 0, rz: d.rz || 0, h: H0 * rand(0.85, 1.1),
+        vx: sign() * rand(0.5, 0.9), vy: sign() * rand(0.6, 1), vz: sign() * rand(0.15, 0.3), phase: rand(0, Math.PI * 2), risen: false
+      };
+    });
+    const t0 = performance.now();
+    let last = t0, running = true;
+    function frame(now) {
+      if (!running) return;
+      const t = now - t0, dt = now - last;
+      last = now;
+      for (const a of air) {
+        const rise = Math.min(1, t / TUMBLE_RISE_MS);
+        a.risen = rise === 1;
+        a.lift = a.h * Math.sin(rise * Math.PI / 2) + (a.risen ? Math.sin(t / 160 + a.phase) * a.h * 0.06 : 0);
+        a.rx += a.vx * dt; a.ry += a.vy * dt; a.rz += a.vz * dt;
+        applyDie(a.d, a.x, a.y, a.lift, a.rx, a.ry, a.rz);
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    Sound.shake();
+    return {
+      stop() { running = false; return air; },
+      // 投注失敗：骰子回到原本的位置與點數
+      cancel() { running = false; placeDice(); }
+    };
+  }
+
+  // 拋骰：往上拋起 → 落桌彈跳 → 邊滾邊滑到新位置，最後停在指定點數。
+  // air：tumble 交出的空中狀態，已拋到高點時直接從空中落下
+  function throwDice(values, fast, air) {
     const n = values.length;
     const spots = layout(n);
-    const W = el.tray.clientWidth, H = el.tray.clientHeight;
     const H0 = fast ? 150 : 300;
-    const dur = fast ? 600 : 1400;
-    const TOSS = 0.16;
+    const risen = !!air && air.length === n && air.every(a => a.risen);
+    const dur = risen ? (fast ? 450 : 1000) : fast ? 600 : 1400;
+    const TOSS = risen ? 0 : 0.16;
     const plans = values.map((v, i) => {
       const d = dice[i];
+      const a = air && air[i];
       d.el.style.display = d.shadow.style.display = '';
       d.v = v;
-      // 新出現的骰子從托盤下緣丟進來
-      const from = d.shown ? { x: d.x, y: d.y } : { x: W / 2 - ds / 2 + rand(-60, 60), y: H - ds * 0.6 };
+      const from = a ? { x: a.x, y: a.y } : entryPoint(d);
+      const start = a ? { rx: a.rx, ry: a.ry, rz: a.rz } : { rx: d.rx, ry: d.ry, rz: d.rz };
       const [fx, fy] = FACE_ROT[v];
       const dir = () => (Math.random() < 0.5 ? -1 : 1);
-      const spin = (start, base) => base + 360 * Math.round((start + dir() * rand(fast ? 540 : 900, fast ? 900 : 1440) - base) / 360);
+      const spin = (begin, base) => base + 360 * Math.round((begin + dir() * rand(fast ? 540 : 900, fast ? 900 : 1440) - base) / 360);
       return {
-        d, from, to: spots[i],
-        start: { rx: d.rx, ry: d.ry, rz: d.rz },
-        end: { rx: spin(d.rx, fx), ry: spin(d.ry, fy), rz: spots[i].rz + (fast ? 0 : 360 * dir()) },
-        delay: i * (fast ? 20 : 55) + rand(0, fast ? 20 : 50),
-        h: H0 * rand(0.85, 1.1), prev: 0, falling: false, hits: 0
+        d, from, to: spots[i], start,
+        end: { rx: spin(start.rx, fx), ry: spin(start.ry, fy), rz: spots[i].rz + 360 * Math.round((start.rz - spots[i].rz) / 360) + (fast ? 0 : 360 * dir()) },
+        delay: risen ? 0 : i * (fast ? 20 : 55) + rand(0, fast ? 20 : 50),
+        h: risen ? a.lift : H0 * rand(0.85, 1.1), prev: risen ? a.lift : 0, falling: risen, hits: 0
       };
     });
     dice.forEach((d, i) => { if (i >= n) { d.el.style.display = d.shadow.style.display = 'none'; d.shown = false; } });
@@ -526,18 +567,17 @@
     let r;
     rolling = true;
     renderControls();
-    // 按下就開始搖骰（音效與托盤晃動），伺服器結果回來再擲出
-    Sound.shake();
-    el.tray.classList.add('shaking');
+    // 按下就把骰子拋起翻滾，伺服器結果回來再落下
+    clearMarks();
+    const air = tumble(sel.n, fast || reduceMotion);
     try { r = await game.roll(amount, bet()); }
-    catch (e) { rolling = false; renderControls(); say(e.message); return null; }
-    finally { el.tray.classList.remove('shaking'); }
+    catch (e) { air.cancel(); rolling = false; renderControls(); say(e.message); return null; }
     record(r);
     save();
     shownBalance = D.cents(game.balance - r.payout);
     clearMarks();
     renderControls();
-    await throwDice(r.dice, fast || reduceMotion);
+    await throwDice(r.dice, fast || reduceMotion, air.stop());
     rolling = false;
     if (relayoutPending) { relayoutPending = false; placeDice(); }
     shownBalance = null;
