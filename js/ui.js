@@ -18,7 +18,7 @@
   const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const el = {
-    balance: $('#balance'), wallet: $('.wallet'), bet: $('#betAmount'), main: $('#mainBtn'), fast: $('#fastChk'),
+    balance: $('#balance'), wallet: $('.wallet'), bet: $('#betAmount'), main: $('#mainBtn'),
     diceCount: $('#diceCount'), typeSeg: $('#typeSeg'), faceField: $('#faceField'), faceLabel: $('#faceLabel'), facePick: $('#facePick'),
     condField: $('#condField'), condLabel: $('#condLabel'), condSeg: $('#condSeg'),
     targetField: $('#targetField'), targetLabel: $('#targetLabel'), targetOut: $('#targetOut'), tMinus: $('#tMinus'), tPlus: $('#tPlus'), quickSum: $('#quickSum'),
@@ -56,7 +56,8 @@
   if (saved.nextServerSeed && !remote) game.nextServerSeed = saved.nextServerSeed;
   const sel = Object.assign({ n: 3, type: 'sum', cond: 'ge', target: 11, face: 6 }, saved.sel || {});
   if (saved.bet) el.bet.value = saved.bet;
-  el.fast.checked = !!saved.fast;
+  // 一律用快速擲骰的動畫（不再提供切換）
+  const FAST_ROLL = true;
 
   let mode = 'manual';
   let rolling = false;
@@ -71,7 +72,7 @@
     try {
       localStorage.setItem(KEY, JSON.stringify({
         balance: game.balance, clientSeed: game.clientSeed, nonce: game.nonce, nextServerSeed: game.nextServerSeed,
-        history: history.slice(0, 100), bet: el.bet.value, sel, fast: el.fast.checked, trayTaps
+        history: history.slice(0, 100), bet: el.bet.value, sel, trayTaps
       }));
     } catch (e) { /* storage unavailable */ }
   }
@@ -624,7 +625,7 @@
     while (!autoStopReq && (rounds === 0 || done < rounds)) {
       if (amount > game.balance) { say('餘額不足，自動投注停止'); break; }
       el.bet.value = amount.toFixed(2);
-      const r = await doRoll(el.fast.checked);
+      const r = await doRoll(FAST_ROLL);
       if (!r) break;
       net += r.payout - r.amount;
       done += 1;
@@ -633,7 +634,7 @@
       amount = Math.max(0.01, amount);
       if (stopProfit && net >= stopProfit) { say(`已達獲利目標 ${fmt(net)}`, true); break; }
       if (stopLoss && -net >= stopLoss) { say(`已達虧損上限 ${fmt(net)}`); break; }
-      await wait(el.fast.checked ? 250 : 550);
+      await wait(250);
     }
     if (rounds) el.autoCount.value = rounds;
     el.bet.value = baseBet.toFixed(2);
@@ -647,7 +648,7 @@
   el.main.addEventListener('click', () => {
     if (autoRunning) { autoStopReq = true; renderControls(); return; }
     if (mode === 'auto') runAuto();
-    else doRoll(el.fast.checked);
+    else doRoll(FAST_ROLL);
   });
   // 手動模式點托盤也能擲
   el.tray.addEventListener('click', () => {
@@ -713,7 +714,6 @@
   }));
   el.bet.addEventListener('change', () => { readBet(); save(); renderControls(); });
   el.bet.addEventListener('input', renderControls);
-  el.fast.addEventListener('change', save);
 
   el.modeSeg.addEventListener('click', e => {
     const b = e.target.closest('button');
