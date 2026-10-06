@@ -235,14 +235,17 @@
 
   // 等伺服器結果時：按下就把骰子拋起，在空中翻滾到結果回來；stop() 交出當下狀態讓 throwDice 接著落下
   function tumble(n, fast) {
-    const H0 = fast ? 150 : 300;
+    // 拋得低一點（跟快速擲骰一樣高），並在空中散開到各自的位置，骰子不會放大疊在一起
+    const H0 = fast ? 110 : 150;
     const sign = () => (Math.random() < 0.5 ? -1 : 1);
-    const air = dice.slice(0, n).map(d => {
+    const spots = layout(n);
+    const air = dice.slice(0, n).map((d, i) => {
       d.el.style.display = d.shadow.style.display = '';
       const at = entryPoint(d);
       return {
-        d, x: at.x, y: at.y, lift: 0, rx: d.rx || 0, ry: d.ry || 0, rz: d.rz || 0, h: H0 * rand(0.85, 1.1),
-        vx: sign() * rand(0.5, 0.9), vy: sign() * rand(0.6, 1), vz: sign() * rand(0.15, 0.3), phase: rand(0, Math.PI * 2), risen: false
+        d, x: at.x, y: at.y, fromX: at.x, fromY: at.y, toX: spots[i].x, toY: spots[i].y,
+        lift: 0, rx: d.rx || 0, ry: d.ry || 0, rz: d.rz || 0, h: H0 * rand(0.85, 1.1),
+        vx: sign() * rand(0.35, 0.6), vy: sign() * rand(0.4, 0.7), vz: sign() * rand(0.1, 0.2), phase: rand(0, Math.PI * 2), risen: false
       };
     });
     const t0 = performance.now();
@@ -257,6 +260,9 @@
         const rise = Math.min(1, t / TUMBLE_RISE_MS);
         a.risen = rise === 1;
         a.lift = a.h * Math.sin(rise * Math.PI / 2) + (a.risen ? Math.sin(t / 160 + a.phase) * a.h * 0.06 : 0);
+        const spread = 1 - Math.pow(1 - Math.min(1, t / 420), 3);
+        a.x = a.fromX + (a.toX - a.fromX) * spread;
+        a.y = a.fromY + (a.toY - a.fromY) * spread;
         a.rx += a.vx * dt; a.ry += a.vy * dt; a.rz += a.vz * dt;
         applyDie(a.d, a.x, a.y, a.lift, a.rx, a.ry, a.rz);
       }
